@@ -2,10 +2,13 @@ import cv2
 import numpy as np
 import pyautogui
 import PIL
+from datetime import datetime
+
 
 # Specify the fourCC codec and video writer object
 codec = cv2.VideoWriter_fourcc(*"XVID")
-output_filename = 'recorded_screen.avi'
+today_date = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+output_filename = f'recorded_screen_{today_date}.avi'
 fps = 10.0
 resolution = pyautogui.size()  # Get the resolution of the screen
 
