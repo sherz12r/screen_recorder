@@ -2,53 +2,98 @@ import cv2
 import numpy as np
 import pyautogui
 from datetime import datetime
+import tkinter as tk
+from tkinter import messagebox
 
-# Specify the fourCC codec and video writer object
-codec = cv2.VideoWriter_fourcc(*"XVID")
-today_date = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-output_filename = f'recorded_screen_{today_date}.avi'
-fps = 10.0
-resolution = pyautogui.size()  # Get the resolution of the screen
+# Global variables
+recording = False
+paused = False
+out = None
+prev_mouse_pos = None  # Initialize prev_mouse_pos here
 
-# Create VideoWriter object
-out = cv2.VideoWriter(output_filename, codec, fps, resolution)
+def start_recording():
+    global recording, out
+    if recording:
+        messagebox.showwarning("Warning", "Already recording!")
+        return
+    
+    codec = cv2.VideoWriter_fourcc(*"XVID")
+    today_date = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    output_filename = f'recorded_screen_{today_date}.avi'
+    fps = 10.0
+    resolution = pyautogui.size()  # Get the resolution of the screen
+    out = cv2.VideoWriter(output_filename, codec, fps, resolution)
+    recording = True
 
-# Initialize previous mouse position
-prev_mouse_pos = None
+def stop_recording():
+    global recording, out
+    if not recording:
+        messagebox.showwarning("Warning", "Not recording!")
+        return
+    
+    recording = False
+    out.release()
 
-while True:
-    # Take screenshot using pyautogui
-    img = pyautogui.screenshot()
+def pause_recording():
+    global paused
+    paused = not paused
 
-    # Convert the screenshot to a numpy array
-    frame = np.array(img)
+def update_gui():
+    global prev_mouse_pos  # Declare prev_mouse_pos as global
+    if recording and not paused:
+        # Take screenshot using pyautogui
+        img = pyautogui.screenshot()
 
-    # Convert RGB to BGR (OpenCV uses BGR)
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        # Convert the screenshot to a numpy array
+        frame = np.array(img)
 
-    # Get current mouse position
-    mouse_x, mouse_y = pyautogui.position()
+        # Convert RGB to BGR (OpenCV uses BGR)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-    # Draw a circle at the current mouse position
-    cv2.circle(frame, (mouse_x, mouse_y), 5, (0, 0, 255), -1)
+        # Get current mouse position
+        mouse_x, mouse_y = pyautogui.position()
 
-    # Draw a line to indicate movement from previous position
-    if prev_mouse_pos:
-        cv2.line(frame, prev_mouse_pos, (mouse_x, mouse_y), (0, 255, 0), thickness=2)
+        # Draw a circle at the current mouse position
+        cv2.circle(frame, (mouse_x, mouse_y), 5, (0, 0, 255), -1)
 
-    # Update previous mouse position
-    prev_mouse_pos = (mouse_x, mouse_y)
+        # Draw a line to indicate movement from previous position
+        if prev_mouse_pos:
+            cv2.line(frame, prev_mouse_pos, (mouse_x, mouse_y), (0, 255, 0), thickness=2)
 
-    # Write the frame to the video file
-    out.write(frame)
+        # Update previous mouse position
+        prev_mouse_pos = (mouse_x, mouse_y)
 
-    # Display the recording in real-time
-    cv2.imshow('Screen Recording', frame)
+        # Write the frame to the video file
+        out.write(frame)
 
-    # Stop recording when 'q' key is pressed
-    if cv2.waitKey(1) == ord('q'):
-        break
+        # Display the recording in real-time (optional)
+        # This part is omitted for simplicity, as displaying in tkinter can be complex.
+        # You may choose to show frames using a label or another mechanism.
 
-# Release the VideoWriter and close all windows
-out.release()
+    # Schedule the next update after 10 milliseconds
+    root.after(10, update_gui)
+
+# Create tkinter GUI
+root = tk.Tk()
+root.title("Screen Recorder")
+
+# Function buttons
+start_button = tk.Button(root, text="Start Recording", command=start_recording, width=20, height=2)
+start_button.pack(pady=10)
+
+pause_button = tk.Button(root, text="Pause/Resume", command=pause_recording, width=20, height=2)
+pause_button.pack(pady=10)
+
+stop_button = tk.Button(root, text="Stop Recording", command=stop_recording, width=20, height=2)
+stop_button.pack(pady=10)
+
+# Start GUI update loop
+update_gui()
+
+# Start the tkinter main loop
+root.mainloop()
+
+# Release the VideoWriter and close all windows when tkinter exits
+if out:
+    out.release()
 cv2.destroyAllWindows()
