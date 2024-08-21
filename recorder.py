@@ -11,6 +11,19 @@ paused = False
 out = None
 prev_mouse_pos = None  # Initialize prev_mouse_pos here
 
+def toggle_recording():
+    global recording, out
+    if recording:
+        # Stop recording
+        stop_recording()
+        # Update button text
+        record_button.config(text="Start Recording")
+    else:
+        # Start recording
+        start_recording()
+        # Update button text
+        record_button.config(text="Stop Recording")
+
 def start_recording():
     global recording, out
     if recording:
@@ -77,15 +90,12 @@ def update_gui():
 root = tk.Tk()
 root.title("Screen Recorder")
 
-# Function buttons
-start_button = tk.Button(root, text="Start Recording", command=start_recording, width=20, height=2)
-start_button.pack(pady=10)
+# Single function button for recording
+record_button = tk.Button(root, text="Start Recording", command=toggle_recording, width=20, height=2)
+record_button.pack(pady=10)
 
 pause_button = tk.Button(root, text="Pause/Resume", command=pause_recording, width=20, height=2)
 pause_button.pack(pady=10)
-
-stop_button = tk.Button(root, text="Stop Recording", command=stop_recording, width=20, height=2)
-stop_button.pack(pady=10)
 
 # Start GUI update loop
 update_gui()
